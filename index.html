@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fantom Staré Prahy - Mini</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 5px;
+            background-color: #e4e7eb;
+            color: #222;
+            font-size: 13px; /* Menší základní písmo */
+        }
+        h1 { text-align: center; font-size: 1.1em; margin: 5px 0; }
+        
+        .reset-btn {
+            width: 100%; padding: 6px; margin-bottom: 8px;
+            background: #ff5252; color: white; border: none; border-radius: 4px;
+            font-weight: bold; cursor: pointer; font-size: 0.9em;
+        }
+
+        /* Karta Fantoma - Horní fixní část */
+        .fantom-card {
+            background: #1a252f; color: white;
+            border-radius: 8px; padding: 8px; margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .fantom-card h2 { margin: 0 0 5px 0; font-size: 1em; text-align: center; }
+
+        /* Mřížka detektivů */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .card {
+            background: white; border-radius: 6px; padding: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-top: 4px solid #ccc;
+        }
+        .card h3 { margin: 0 0 5px 0; font-size: 0.9em; border-bottom: 1px solid #eee; }
+
+        /* Řádky s tokeny */
+        .row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 4px;
+        }
+        .label { font-size: 0.85em; width: 20px; }
+        
+        .controls { 
+            display: flex; align-items: center; 
+            background: #f0f0f0; border-radius: 4px; padding: 1px;
+        }
+        .fantom-card .controls { background: #34495e; }
+        
+        .controls button {
+            width: 24px; height: 24px; border: none; background: transparent;
+            font-weight: bold; cursor: pointer; color: inherit; font-size: 16px;
+        }
+        .count { width: 22px; text-align: center; font-weight: bold; font-size: 0.9em; }
+
+        .action-btn {
+            padding: 4px 2px; font-size: 0.75em; border: none; border-radius: 4px;
+            color: white; min-width: 55px; font-weight: bold;
+        }
+        .btn-red { background: #d32f2f; }
+        .btn-blue { background: #1976d2; }
+
+        /* Barvy detektivů */
+        .det-white { border-top-color: #ffffff; }
+        .det-yellow { border-top-color: #fdd835; }
+        .det-red { border-top-color: #f44336; }
+        .det-blue { border-top-color: #2196f3; }
+        .det-green { border-top-color: #4caf50; }
+    </style>
+</head>
+<body>
+
+    <h1>Fantom Staré Prahy</h1>
+    <button class="reset-btn" onclick="window.resetGame()">NOVÁ HRA</button>
+    <div id="app"></div>
+
+    <script>
+        const defaultState = {
+            fantom: { drozka: 4, taxi: 3, tram: 3, boat: 2, double: 2 },
+            detectives: [
+                { id: 1, name: "Bílý", color: "white", drozka: 10, taxi: 9, tram: 5 },
+                { id: 2, name: "Žlutý", color: "yellow", drozka: 10, taxi: 9, tram: 5 },
+                { id: 3, name: "Červený", color: "red", drozka: 10, taxi: 9, tram: 5 },
+                { id: 4, name: "Modrý", color: "blue", drozka: 10, taxi: 9, tram: 5 },
+                { id: 5, name: "Zelený", color: "green", drozka: 10, taxi: 9, tram: 5 }
+            ]
+        };
+
+        let state = JSON.parse(localStorage.getItem('fantomV3Compact')) || JSON.parse(JSON.stringify(defaultState));
+
+        function drawRow(icon, count, onMinus, onPlus, onAction, actionLabel, actionClass) {
+            return `
+                <div class="row">
+                    <div class="label">${icon}</div>
+                    <div class="controls">
+                        <button onclick="${onMinus}">-</button>
+                        <span class="count">${count}</span>
+                        <button onclick="${onPlus}">+</button>
+                    </div>
+                    <button class="action-btn ${actionClass}" onclick="${onAction}">${actionLabel}</button>
+                </div>
+            `;
+        }
+
+        window.renderApp = function() {
+            const app = document.getElementById('app');
+            
+            // Fantom
+            let html = `
+                <div class="fantom-card">
+                    <h2>🎩 FANTOM</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 15px;">
+                        ${drawRow('🐴', state.fantom.drozka, "window.modF('drozka',-1)", "window.modF('drozka',1)", "window.useF('drozka')", "🗑️", "btn-red")}
+                        ${drawRow('🚕', state.fantom.taxi, "window.modF('taxi',-1)", "window.modF('taxi',1)", "window.useF('taxi')", "🗑️", "btn-red")}
+                        ${drawRow('🚋', state.fantom.tram, "window.modF('tram',-1)", "window.modF('tram',1)", "window.useF('tram')", "🗑️", "btn-red")}
+                        ${drawRow('⛴️', state.fantom.boat, "window.modF('boat',-1)", "window.modF('boat',1)", "window.useF('boat')", "🗑️", "btn-red")}
+                        ${drawRow('🟣', state.fantom.double, "window.modF('double',-1)", "window.modF('double',1)", "window.useF('double')", "🗑️", "btn-red")}
+                    </div>
+                </div>
+                <div class="grid">
+            `;
+
+            // Detektivové
+            state.detectives.forEach(d => {
+                html += `
+                    <div class="card det-${d.color}">
+                        <h3>${d.name}</h3>
+                        ${drawRow('🐴', d.drozka, `window.modD(${d.id},'drozka',-1)`, `window.modD(${d.id},'drozka',1)`, `window.useD(${d.id},'drozka')`, "➡️F", "btn-blue")}
+                        ${drawRow('🚕', d.taxi, `window.modD(${d.id},'taxi',-1)`, `window.modD(${d.id},'taxi',1)`, `window.useD(${d.id},'taxi')`, "➡️F", "btn-blue")}
+                        ${drawRow('🚋', d.tram, `window.modD(${d.id},'tram',-1)`, `window.modD(${d.id},'tram',1)`, `window.useD(${d.id},'tram')`, "➡️F", "btn-blue")}
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            app.innerHTML = html;
+        };
+
+        window.useD = function(id, type) {
+            let d = state.detectives.find(x => x.id === id);
+            if(d[type] > 0) { d[type]--; state.fantom[type]++; window.save(); }
+        };
+
+        window.useF = function(type) {
+            if(state.fantom[type] > 0) { state.fantom[type]--; window.save(); }
+        };
+
+        window.modD = function(id, type, amt) {
+            let d = state.detectives.find(x => x.id === id);
+            if(d[type] + amt >= 0) { d[type] += amt; window.save(); }
+        };
+
+        window.modF = function(type, amt) {
+            if(state.fantom[type] + amt >= 0) { state.fantom[type] += amt; window.save(); }
+        };
+
+        window.save = function() {
+            localStorage.setItem('fantomV3Compact', JSON.stringify(state));
+            window.renderApp();
+        };
+
+        window.resetGame = function() {
+            if(confirm('Nová hra?')) {
+                state = JSON.parse(JSON.stringify(defaultState));
+                window.save();
+            }
+        };
+
+        window.renderApp();
+    </script>
+</body>
+</html>
